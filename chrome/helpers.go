@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	wappalyzer "github.com/projectdiscovery/wappalyzergo"
-	"golang.org/x/net/html"
+	"golang.org-x-net/html"
 )
 
 func isTitleElement(n *html.Node) bool {

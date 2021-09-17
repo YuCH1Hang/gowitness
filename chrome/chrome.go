@@ -10,6 +10,8 @@ import (
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/network"
 	"github.com/sensepost/gowitness/storage"
 	"gorm.io/gorm"
 )
@@ -25,6 +27,8 @@ type Chrome struct {
 	FullPage    bool
 	ChromePath  string
 	Proxy       string
+	Domain      string
+        Cookies     []string
 }
 
 // NewChrome returns a new initialised Chrome struct
@@ -155,7 +159,13 @@ func (chrome *Chrome) Screenshot(url *url.URL) ([]byte, error) {
 	defer cancel()
 
 	var buf []byte
+        if len(chrome.Cookies)>0 {
+                  err :=chromedp.Run(ctx, setcookies( chrome.Domain,chrome.Cookies))
+                  if err !=err {
+					panic(err)
+	          }
 
+        }
 	// squash JavaScript dialog boxes such as alert();
 	chromedp.ListenTarget(ctx, func(ev interface{}) {
 		if _, ok := ev.(*page.EventJavascriptDialogOpening); ok {
@@ -193,4 +203,33 @@ func (chrome *Chrome) Screenshot(url *url.URL) ([]byte, error) {
 	}
 
 	return buf, nil
+}
+
+
+
+
+// setcookies returns a task to navigate to a host with the passed cookies set
+// on the network request.
+func setcookies(domain string,cookies []string) chromedp.Tasks {
+	if len(cookies)%2 != 0 {
+		panic("length of cookies must be divisible by 2")
+	}
+	return chromedp.Tasks{
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			// create cookie expiration
+			expr := cdp.TimeSinceEpoch(time.Now().Add(180 * 24 * time.Hour))
+			// add cookies to chrome
+			for i := 0; i < len(cookies); i += 2 {
+				err := network.SetCookie(cookies[i], cookies[i+1]).
+					WithExpires(&expr).
+					WithDomain(domain).
+					WithHTTPOnly(true).
+					Do(ctx)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}),
+         }
 }

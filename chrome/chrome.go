@@ -143,6 +143,7 @@ func (chrome *Chrome) Screenshot(url *url.URL) ([]byte, error) {
 	options = append(options, chromedp.UserAgent(chrome.UserAgent))
 	options = append(options, chromedp.DisableGPU)
 	options = append(options, chromedp.Flag("ignore-certificate-errors", true)) // RIP shittyproxy.go
+	options = append(options, chromedp.Flag("blink-settings", "imagesEnabled=false")) // disable gif animation 
 	options = append(options, chromedp.WindowSize(chrome.ResolutionX, chrome.ResolutionY))
 
 	if chrome.ChromePath != "" {
